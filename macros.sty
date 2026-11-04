@@ -1,0 +1,60 @@
+\newcommand{\N}{\mathbb{N}}
+
+\newcommand{\keyword}[1]{\textsf{#1}\xspace}
+\newcommand{\catt}{\keyword{CaTT}}
+\newcommand{\hott}{\keyword{HoTT}}
+\newcommand{\gsett}{\keyword{GSeTT}}
+\newcommand{\agda}{\keyword{Agda}}
+\newcommand{\ocaml}{\keyword{OCaml}}
+\newcommand{\coq}{\keyword{Coq}}
+\newcommand{\lean}{\keyword{Lean}}
+\newcommand{\cattplugin}{\keyword{CaTT plugin}}
+
+\newcommand{\obj}{\ast}
+\newcommand{\arr}[3][]{#2 \to_{#1} #3}
+\newcommand{\emptycontext}{\emptyset}
+
+\newcommand{\leaf}{\mathsf{lf}}
+\newcommand{\branch}{\mathsf{br}}
+
+\newcommand{\Id}{\mathsf{Id}}
+\newcommand{\coh}{\mathsf{coh}}
+\newcommand{\J}{\mathsf{J}}
+\newcommand{\refl}{\mathsf{refl}}
+\newcommand{\id}{\mathsf{id}}
+\newcommand{\El}{\mathsf{El}}
+\newcommand{\comp}{\mathsf{comp}}
+\newcommand{\lcomp}{\mathsf{lcomp}}
+
+\newcommand{\cvar}[1]{{\color{blue}\texttt{\textnormal{#1}}}}
+\newcommand{\hvar}[1]{{\color{gray}\mathbf{#1}}}
+
+\newcommand{\interp}[1]{\llbracket #1 \rrbracket}
+
+\newcommand{\ctx}{\mathsf{ctx}}
+\newcommand{\type}{\mathsf{type}}
+\newcommand{\Type}{\mathcal{U}}
+
+\DeclareMathSymbol{:}{\mathpunct}{operators}{"3A}
+\newcommand{\defeq}{\mathrel{{:}{=}}}
+
+\newcommand{\ctxrule}[1]{#1 \vdash~\ctx}
+\newcommand{\typerule}[2]{#1 \vdash #2~\type}
+\newcommand{\termrule}[3]{#1 \vdash #2 \mathrel{:} #3}
+\newcommand{\subrule}[3]{#1 \vdash #2 \mathrel{{:}{:}} #3}
+\newcommand{\psrule}[1]{#1 \vdash_{\textsf{ps}}}
+\newcommand{\psauxrule}[3]{#1\vdash_{\textsf{ps}}#2:#3}
+\newcommand{\cohrule}[2]{\vdash \coh_{#1,#2}}
+\newcommand{\sub}[1]{\langle#1\rangle}
+
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\assoc}{assoc}
+\DeclareMathOperator{\tail}{tail}
+\DeclareMathOperator{\elim}{elim}
+
+\newcommand{\compastlabel}[3]{%
+  \shortstack{%
+    \texttt{#2}\\[-1pt]
+    \texttt{#3}{\color{black!55}\tiny\hspace{2pt}[#1]}%
+  }%
+}

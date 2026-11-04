@@ -1,0 +1,1386 @@
+\documentclass{article}%
+\usepackage{float}%
+\usepackage{hyperref}%
+\usepackage{amssymb}%
+\usepackage{amsthm}%
+\usepackage{amsmath}%
+\usepackage{stmaryrd}%
+\usepackage{thm-restate}%
+\usepackage{microtype}%
+\usepackage{mathpartir}%
+\usepackage{nameref}%
+\usepackage{tikz-cd}%
+\usepackage{todonotes}%
+\usepackage{makecell}%
+\usepackage{xspace}%
+\usepackage{quiver}%
+\usepackage{xcolor}%
+\usepackage{fvextra}%
+\usepackage{mdframed}%
+\usepackage{forest}
+
+\usepackage{ebproof}
+
+\IfFileExists{tikzlibrarynfold.code.tex}{%
+  \usetikzlibrary{nfold}%
+  \tikzset{triple arrow/.style={scaling nfold=3}}%
+}{%
+  % tikz-nfold was added after TeX Live 2022.  Approximate its three-line
+  % arrows so the document remains buildable on older installations.
+  \tikzset{triple arrow/.style={%
+    double distance between line centers=.9ex,
+    postaction={draw, line width=.4pt, -}%
+  }}%
+}
+
+\usepackage{macros}%
+
+\definecolor{githubcodebackground}{HTML}{F6F8FA}%
+\definecolor{githubcodetext}{HTML}{1F2328}%
+
+\DefineVerbatimEnvironment{githubcode}{Verbatim}{%
+  fontsize=\footnotesize,
+  formatcom=\color{githubcodetext},
+  breaklines=true,
+  breakanywhere=true,
+  breaksymbolleft={},
+  vspace=0pt
+}%
+\surroundwithmdframed[%
+  backgroundcolor=githubcodebackground,
+  linecolor=githubcodebackground,
+  linewidth=0pt,
+  leftmargin=0pt,
+  rightmargin=0pt,
+  innerleftmargin=8pt,
+  innerrightmargin=8pt,
+  innertopmargin=7pt,
+  innerbottommargin=7pt,
+  splittopskip=7pt,
+  splitbottomskip=7pt,
+  skipabove=\medskipamount,
+  skipbelow=\medskipamount
+]{githubcode}%
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\theoremstyle{definition}
+\newtheorem{example}[theorem]{Example}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+
+\theoremstyle{plain}
+\newtheorem{corollary}[theorem]{Corollary}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Induction rules
+
+\usepackage{mathpartir}
+\renewcommand{\TirNameStyle}{\textsc}
+% style of the induction rule name for mathpartir
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Reference to inference rules, inspired by
+% https://tex.stackexchange.com/questions/340788/cross-referencing-inference-rules
+
+\makeatletter
+
+\NewDocumentCommand \mpr@label { m }{%
+  \def\@currentlabelname{#1}%
+   \phantomsection % Creating an anchor to get a correct hyper reference link
+}
+
+\DeclareDocumentCommand \inferdef {m m m}{%
+   \inferrule*[vcenter,right=#1]{#2}{#3}
+   \mpr@label{\textsc{#1}}
+}%
+
+\makeatother
+
+\newcommand{\ruleref}[1]{Rule \nameref{#1}}
+
+
+\title{Program Length and Optimal Explicit Encodings of CaTT Entities}
+\author{Karol Ołtarzewski}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We characterize straight-line programs whose instructions are operations derived
+from the \catt syntactic construction rules. These programs construct syntax
+trees of \catt entities. We introduce explicit encodings which measure the size
+of a \catt entity both by the number of program instructions and by the encoded
+bit-length of a program constructing it under a worst-case optimal explicit
+encoding.
+\end{abstract}
+
+\section{Introduction}
+Finster and Mimram have defined a dependent type theory called \catt, which
+describes the structure of \(\omega\)-categories. The type theory \catt has four
+kinds of syntactic entitites: contexts, substitutions, types, and terms. In
+order to construct these entities one need up to eight syntactic instructions.
+In this article we characterize straight-line programs whose instructions are
+the eight elementary operations. Such a program constructs an abstract syntax
+tree of a \catt entity, one vertex at a time. We introduce explicit encodings of
+such programs. An explicit encoding assigns codewords to the operation tags and
+to the parameters, using a pattern code with a common suffix terminator. This
+yields two measures of size: the number of program instructions, which equals
+the number of vertices of the constructed tree, and the encoded bit-length of
+the program, which counts the total number of symbols in its explicit
+presentation. The first measure is invariant to the encoding, while the second
+depends on the assignment of codewords. For a finite family of \catt syntax
+trees, we ask for an explicit encoding that minimizes the largest encoded
+program length over the family, and we call such an encoding worst-case optimal.
+We give a finite search that constructs a worst-case optimal explicit encoding
+over a fixed alphabet, and we study basic properties of these encodings.
+
+\paragraph{Related works.}
+Yanofsky studied Kolmogorov complexity of categories and for that purpose
+developed \emph{Sammy} language~\cite{Yanofsky}.Benjamin, Markakis, Offord,
+Sarti, and Vicary measured the sizes of higher Eckmann--Hilton terms by counting
+characters of a particular syntactic representation~\cite{Beyond_eh}. Benjamin
+did similar measurements for higher identity proofs in homotopy type
+theory~\cite{benjamin_higher_identity}.
+
+\section{\catt syntax and elementary operations}
+Let us briefly recall type theory \catt. Finster--Rice--Vicary provided a
+compact set of rules that yields the abstract syntax construction of \catt
+entities, the formation rules are:~\cite{ASfSAaUC}
+
+\begin{figure}[H]
+  \centering
+  \small
+  \begin{tabular}{@{}c@{\hspace{3em}}c@{}}
+    \begin{prooftree}
+      \infer0{\emptyset : \mathsf{Ctx}}
+    \end{prooftree}
+    &
+    \begin{prooftree}
+      \hypo{\Gamma : \mathsf{Ctx}}
+      \hypo{A : \mathsf{Type}_\Gamma}
+      \infer2{\Gamma, (x : A) : \mathsf{Ctx}}
+    \end{prooftree}
+    \\[2.2em]
+    \begin{prooftree}
+      \infer0{\langle \rangle : \emptyset \to \Gamma}
+    \end{prooftree}
+    &
+    \begin{prooftree}
+      \hypo{\sigma : \Delta \to \Gamma}
+      \hypo{A : \mathsf{Type}_\Delta}
+      \hypo{t : \mathsf{Term}_\Gamma}
+      \infer3{
+        \langle \sigma, x \mapsto t \rangle
+        : (\Delta, x : A) \to \Gamma
+      }
+    \end{prooftree}
+    \\[2.2em]
+    \begin{prooftree}
+      \infer0{\obj : \mathsf{Type}_\Gamma}
+    \end{prooftree}
+    &
+    \begin{prooftree}
+      \hypo{A : \mathsf{Type}_\Gamma}
+      \hypo{s : \mathsf{Term}_\Gamma}
+      \hypo{t : \mathsf{Term}_\Gamma}
+      \infer3{\arr[A]{s}{t} : \mathsf{Type}_\Gamma}
+    \end{prooftree}
+    \\[2.2em]
+    \begin{prooftree}
+      \hypo{x \in \Gamma\vphantom{\mathsf{Type}}}
+      \infer1{x : \mathsf{Term}_\Gamma}
+    \end{prooftree}
+    &
+    \begin{prooftree}
+      \hypo{\Delta : \mathsf{Ctx}}
+      \hypo{A : \mathsf{Type}_\Delta}
+      \hypo{\sigma : \Delta \to \Gamma}
+      \infer3{\coh_{\Delta,A}[\sigma] : \mathsf{Term}_\Gamma}
+    \end{prooftree}
+  \end{tabular}
+  \caption{Abstract syntax constructions in \catt.}
+  \label{fig:syntax}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \small
+
+  \begin{tabular}{@{}c@{\hspace{3em}}c@{}}
+    \begin{prooftree}
+      \infer0{\emptyset \vdash}
+    \end{prooftree}
+    &
+    \begin{prooftree}
+      \hypo{\Gamma \vdash}
+      \hypo{\Gamma \vdash A}
+      \infer2{\Gamma, (x : A) \vdash}
+    \end{prooftree}
+    \\[2.2em]
+    \begin{prooftree}
+      \infer0{\Gamma \vdash \obj}
+    \end{prooftree}
+    &
+    \begin{prooftree}
+      \hypo{\Gamma \vdash A}
+      \hypo{\Gamma \vdash s : A}
+      \hypo{\Gamma \vdash t : A}
+      \infer3{\Gamma \vdash \arr[A]{s}{t}}
+    \end{prooftree}
+    \\[2.2em]
+    \begin{prooftree}
+      \infer0{\Delta \vdash \langle \rangle : \emptyset}
+    \end{prooftree}
+    &
+    \begin{prooftree}
+      \hypo{\Delta \vdash \sigma : \Gamma}
+      \hypo{\Gamma \vdash A}
+      \hypo{\Delta \vdash t : A\llbracket\sigma\rrbracket}
+      \infer3{
+        \Delta \vdash
+        \langle \sigma, x \mapsto t \rangle
+        : (\Gamma, x : A)
+      }
+    \end{prooftree}
+    \\[2.2em]
+    \multicolumn{2}{c}{
+      \begin{prooftree}
+        \hypo{\Gamma \vdash}
+        \hypo{(x : A) \in \Gamma}
+        \infer2{\Gamma \vdash x : A}
+      \end{prooftree}
+    }
+  \end{tabular}
+
+  \par\bigskip
+
+  % Composition rule.
+  \begin{prooftree}
+    \hypo{
+      \begin{gathered}
+        \Delta \vdash_{\mathrm{p}}
+        \qquad
+        \Delta \vdash \arr[A]{s}{t}
+        \qquad
+        \Gamma \vdash \sigma : \Delta
+        \\[0.4em]
+        \operatorname{supp}(s)
+        =
+        \operatorname{supp}
+          \bigl(\delta_{\Delta}^{-,\dim(\Delta)-1}\bigr)
+        \qquad
+        \operatorname{supp}(t)
+        =
+        \operatorname{supp}
+          \bigl(\delta_{\Delta}^{+,\dim(\Delta)-1}\bigr)
+      \end{gathered}
+    }
+    \infer1{
+      \Gamma \vdash
+      \coh_{\Delta,\arr[A]{s}{t}}[\sigma]
+      :
+      \arr[{A\llbracket\sigma\rrbracket}]
+        {s\llbracket\sigma\rrbracket}
+        {t\llbracket\sigma\rrbracket}
+    }
+  \end{prooftree}
+
+  \par\bigskip
+
+  % Coherence rule.
+  \begin{prooftree}
+    \hypo{
+      \begin{gathered}
+        \Delta \vdash_{\mathrm{p}}
+        \qquad
+        \Delta \vdash \arr[A]{s}{t}
+        \qquad
+        \Gamma \vdash \sigma : \Delta
+        \\[0.4em]
+        \operatorname{supp}(s)
+        =
+        \operatorname{supp}(t)
+        =
+        \Delta
+      \end{gathered}
+    }
+    \infer1{
+      \Gamma \vdash
+      \coh_{\Delta,\arr[A]{s}{t}}[\sigma]
+      :
+      \arr[{A\llbracket\sigma\rrbracket}]
+        {s\llbracket\sigma\rrbracket}
+        {t\llbracket\sigma\rrbracket}
+    }
+  \end{prooftree}
+
+  \par\medskip
+  \caption{Typing rules in \catt.}
+  \label{fig:typing}
+\end{figure}
+
+Rules above determine eight elementary operations. These operations, assembled
+as straight-line program, that is, finite sequence of steps executed in order,
+without loops, can construct every term, type, substitution or context of \catt.
+Syntactic representations of these eight elementary operations are following:
+% These programs are in normal form and are encodings of abstract syntax trees
+% \catt construction. They exhibit quine-like property -- their source code is
+% their output.
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.25}
+\makebox[\textwidth][c]{%
+\begin{tabular}{@{}lllc@{}}
+\hline
+Operation
+  & Argument tree
+  & Result
+  & Corresponding rule from Figure~\ref{fig:syntax} \\
+\hline
+
+$\mathtt{NODE}(\mathsf{EmptyCtx})$
+  & none
+  & $\emptyset$
+  & $\dfrac{}{\emptyset : \mathsf{Ctx}}$
+  \\[1.4em]
+
+$\mathtt{NODE}(\mathsf{ExtendCtx},x)$
+  & $\Gamma,A$
+  & $(\Gamma,x:A)$
+  & $\dfrac{
+        \Gamma : \mathsf{Ctx}
+        \quad A : \mathsf{Type}_\Gamma
+      }{
+        \Gamma,(x:A) : \mathsf{Ctx}
+      }$
+  \\[1.4em]
+
+$\mathtt{NODE}(\mathsf{EmptySub})$
+  & none
+  & $\langle\rangle$
+  & $\dfrac{}{
+        \langle\rangle : \emptyset \to \Gamma
+      }$
+  \\[1.4em]
+
+$\mathtt{NODE}(\mathsf{ExtendSub},x)$
+  & $\sigma,t$
+  & $\langle\sigma,x\mapsto t\rangle$
+  & $\dfrac{
+        \sigma : \Delta \to \Gamma
+        \quad A : \mathsf{Type}_\Delta
+        \quad t : \mathsf{Term}_\Gamma
+      }{
+        \langle\sigma,x\mapsto t\rangle
+        : (\Delta,x:A) \to \Gamma
+      }$
+  \\[1.4em]
+
+$\mathtt{NODE}(\mathsf{Star})$
+  & none
+  & $\obj$
+  & $\dfrac{}{\obj : \mathsf{Type}_\Gamma}$
+  \\[1.4em]
+
+$\mathtt{NODE}(\mathsf{Arrow})$
+  & $A,s,t$
+  & $\arr[A]{s}{t}$
+  & $\dfrac{
+        A : \mathsf{Type}_\Gamma
+        \quad s : \mathsf{Term}_\Gamma
+        \quad t : \mathsf{Term}_\Gamma
+      }{
+        \arr[A]{s}{t} : \mathsf{Type}_\Gamma
+      }$
+  \\[1.4em]
+
+$\mathtt{NODE}(\mathsf{Var},x)$
+  & none
+  & $x$
+  & $\dfrac{x \in \Gamma}{x : \mathsf{Term}_\Gamma}$
+  \\[1.4em]
+
+$\mathtt{NODE}(\mathsf{Coh})$
+  & $\Delta,A,\sigma$
+  & $\coh_{\Delta,A}[\sigma]$
+  & $\dfrac{
+        \Delta : \mathsf{Ctx}
+        \quad A : \mathsf{Type}_\Delta
+        \quad \sigma : \Delta \to \Gamma
+      }{
+        \coh_{\Delta,A}[\sigma] : \mathsf{Term}_\Gamma
+      }$
+  \\[.8em]
+
+\hline
+\end{tabular}%
+}
+\caption{\catt elementary operations.}
+\label{tab:elementary-operations}
+\end{center}
+
+Each of these eight operations has a unique tag: \texttt{EmptyCtx},
+\texttt{ExtendCtx}, \texttt{EmptySub}, \texttt{ExtendSub}, \texttt{Star},
+\texttt{Arrow}, \texttt{Var}, or \texttt{Coh}. The operations
+\texttt{ExtendCtx}, \texttt{ExtendSub}, and \texttt{Var} have an additional
+parameter, specifying name of the term being introduced. Every operation can be
+therefore specified by at most two fields, tag field and parameter field. The
+operations whose tags are \texttt{ExtendCtx}, \texttt{ExtendSub},
+\texttt{Arrow}, and \texttt{Coh} also require argument trees, as listed in the
+table above.
+
+\section{Abstract Syntax Trees and Construction Programs}
+\begin{definition}
+\(T\) denotes abstract syntax tree derived from syntactic construction build
+according to rules~\ref{fig:syntax} and ~\ref{fig:typing}. \(T\) can represent
+context, substitution, type, or term. \(\mathcal{T} \ni T\) is a family of \catt
+syntax trees.
+\end{definition}
+
+\begin{proposition}[Reconstruction from abstract syntax trees]
+\label{prop:syntax-tree-reconstruction}
+Every \(T\in\mathcal{T}\) determines a unique \catt syntactic entity.
+\end{proposition}
+
+\begin{proof}
+Proof follows from the definition of \(T\in\mathcal{T}\). The root vertex
+determines the resulting sort. Its labelled argument subtrees determine the
+arguments uniquely by structural induction. Hence the entire expression is
+uniquely determined.
+\end{proof}
+
+\begin{remark}
+Different typing judgments can have the same abstract syntax tree for their
+syntactic entity. To see that different typing judgments can have the same tree,
+consider
+\[
+  (x:\obj)\vdash x:\obj,
+  \qquad
+  (x:\obj,y:\obj)\vdash x:\obj.
+\]
+Both judgments are derivable using Figure~\ref{fig:typing}. Their syntactic
+entities have the same abstract syntax tree, consisting of a single vertex
+labelled \(\mathsf{Var}\) with parameter \(x\). Their contexts, and
+consequently their typing judgments and derivations, are different.
+\end{remark}
+
+
+\begin{definition}
+Let \(E\) be a finite encoding, over alphabet \(\Sigma_E\), of each of
+elementary \catt operations. Encodings depends only on abstract constructors and
+parameters, independently of arbitrary notation used to represent them.
+\(\mathcal{P}_E\) is a function which assigns each \catt abstract syntax tree a
+family of sequences of \catt elementary operations in a given encoding \(E\),
+which describe intended syntax tree. Each of these sequences is a program whose
+operations are ordered in a manner permitted by rules~\ref{fig:syntax} and
+~\ref{fig:typing}. In particular \(\mathcal{P}_E(T)\) is a family of sequences
+where each sequence describe \(T\). An element \(P \in \mathcal{P}_E(T)\) is an
+admissible program. These programs construct \(T\), starting with no vertices.
+Every admissible program contains exactly one elementary operation for each
+vertex of \(T\).
+\end{definition}
+
+\begin{definition}[Length]
+\label{def:program-length}
+Let \(P=(o_1,\ldots,o_n)\in\mathcal{P}_E(T)\).
+The \emph{length} of \(P\) is
+\[
+  |P| := n.
+\]
+
+For a fixed \(T\), every admissible program contains exactly one elementary
+operation for each vertex of \(T\). Consequently, all programs in
+\(\mathcal{P}_E(T)\) have the same length.
+
+\end{definition}
+
+Every \(T\in\mathcal{T}\) admits an elementary construction
+program: recursively construct its argument subtrees,
+then apply the constructor at its root.
+Consequently, \(\mathcal{P}_E(T)\) is nonempty.
+
+Since every admissible program contains exactly one elementary
+operation for each vertex occurrence of \(T\), all elements
+of \(\mathcal{P}_E(T)\) have the same length:
+\[
+  |P| = |V(T)|
+  \qquad\text{for every } P\in\mathcal{P}_E(T).
+\]
+
+\section{Structural Properties of Term Trees}
+\begin{lemma}[\catt term tag counts]
+\label{lem:catt-term-tag-counts}
+Let \(T\) be a finite abstract syntax tree of a term, and let \(N_X\) denote the
+number of occurrences of tag \(X\) in \(T\).
+\begin{enumerate}
+  \item \(N_{\mathtt{Coh}} = N_{\mathtt{EmptyCtx}} = N_{\mathtt{EmptySub}},\)
+  \item \(N_{\mathtt{ExtendCtx}} = N_{\mathtt{ExtendSub}},\)
+  \item \(N_{\mathtt{Star}} = N_{\mathtt{Coh}}+N_{\mathtt{ExtendCtx}},\) 
+  \item \(N_{\mathtt{Var}} =
+  2N_{\mathtt{Arrow}}+N_{\mathtt{ExtendCtx}}-N_{\mathtt{Coh}}+1. \)
+  \item \(N_{\mathtt{ExtendCtx}} =
+  N_{\mathtt{ExtendSub}} \ge N_{\mathtt{Coh}}\)
+  \item \(N_{\mathtt{Arrow}}\ge N_{\mathtt{Coh}}\)
+  \item \(N_{\mathtt{Var}} > N_{\mathtt{Arrow}}\)
+  \item \(
+  N_{\mathtt{Var}} > N_{\mathtt{Star}} > N_{\mathtt{ExtendCtx}} =
+  N_{\mathtt{ExtendSub}} \ge N_{\mathtt{Coh}} = N_{\mathtt{EmptyCtx}} =
+  N_{\mathtt{EmptySub}}
+  \)
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+\begin{enumerate}
+\item[1. 2.] Each coherence contains context and substitution. Each context ends
+with \(\mathtt{EmptyCtx}\), and each substitution ends with
+\(\mathtt{EmptySub}\). Context and corresponding substitution have the same
+number of elements. Summing over all coherences gives the first two identities.
+
+\item[3.] Each context extension has one underlying type, each arrow has one
+underlying type, and each coherence has one underlying type. All these positions
+are \(\mathtt{Star}\) or \(\mathtt{Arrow}\), so
+\[
+  N_{\mathtt{Star}}+N_{\mathtt{Arrow}}=N_{\mathtt{ExtendCtx}}+N_{\mathtt{Arrow}}+N_{\mathtt{Coh}}.
+\]
+
+\item[4.] There is the root, there are two endpoints per arrow, and there is
+one term per substitution extension. Each such position is occupied by
+\(\mathtt{Var}\) or \(\mathtt{Coh}\), so
+\[
+  N_{\mathtt{Var}}+N_{\mathtt{Coh}}=1+2N_{\mathtt{Arrow}}+N_{\mathtt{ExtendCtx}}.
+\]
+\item[5. 6.] Each coherence has a context and an arrow type. Hence
+\(N_{\mathtt{ExtendCtx}}\ge N_{\mathtt{Coh}}\) and \(N_{\mathtt{Arrow}}\ge
+N_{\mathtt{Coh}}\).
+\item[7.] By (4), (5) and (6). 
+\item[8.]
+\[
+  N_{\mathtt{Arrow}} \geq N_{\mathtt{Coh}},
+\]
+and therefore
+\[
+  N_{\mathtt{Arrow}}+\frac12>N_{\mathtt{Coh}}.
+\]
+Multiplying by two and then adding
+\(N_{\mathtt{ExtendCtx}}\) gives
+\[
+  2N_{\mathtt{Arrow}}+1+N_{\mathtt{ExtendCtx}}
+  >
+  2N_{\mathtt{Coh}}+N_{\mathtt{ExtendCtx}}.
+\]
+Subtracting \(N_{\mathtt{Coh}}\) from both sides, we obtain
+\[
+  2N_{\mathtt{Arrow}}+1+N_{\mathtt{ExtendCtx}}
+  -N_{\mathtt{Coh}}
+  >
+  N_{\mathtt{Coh}}+N_{\mathtt{ExtendCtx}}.
+\]
+By identities (3) and (4), this is precisely
+\[
+  N_{\mathtt{Var}}>N_{\mathtt{Star}}.
+\]
+Other inequalities follow from previous proofs.
+\end{enumerate}
+\end{proof}
+
+\section{Construction Orders and Examples}
+\begin{proposition}[Admissible construction orders]
+\label{prop:construction-orders}
+Let \(T\in\mathcal{T}\), and choose an enumeration of its vertex occurrences.
+Associate each occurrence with its elementary operation, using the argument
+subtrees designated by \(T\) in their prescribed roles.
+
+These operations can be performed in the chosen order to construct \(T\) from
+the bottom up if and only if every child precedes its parent.
+\end{proposition}
+
+\begin{proof}
+In a bottom-up construction, each argument subtree must be available before the
+operation constructing its parent is performed. Hence every child must precede
+its parent.
+
+Conversely, suppose that every child precedes its parent. Proceed along the
+enumeration. By induction, when a vertex is reached, its argument subtrees have
+already been constructed. They remain available because each has a unique
+parent, which has not yet been constructed. Applying the corresponding
+elementary operation to these subtrees in their prescribed roles constructs the
+subtree rooted at that vertex. The root occurs last, so the resulting tree is
+\(T\).
+\end{proof}
+
+Proposition~\ref{prop:construction-orders} allows different construction
+conventions, including left-to-right postorder, right-to-left postorder, and
+interleaving independent subtree constructions, provided that every child is
+constructed before its parent and prescribed roles are preserved. For the
+example programs that follow, we use postorder traversal with stack execution:
+argument trees are constructed in the order listed in the table, followed by the
+operation constructing their parent. Each operation consumes its argument trees
+from the top of the stack and pushes the resulting tree.
+
+\begin{lemma}
+Let \(P\) be a postorder program which constructs \catt coherence. \(P\) can be
+split into a sequence of three subprograms, and one coherence operation, which
+respectively construct the context, the type and the substitution.
+\end{lemma}
+\begin{proof}
+The root of the syntax tree is a \texttt{Coh} operation, whose three ordered
+argument subtrees represent the context, the type, and the substitution,
+respectively.
+
+By the definition of postorder traversal, each argument subtree is traversed
+completely before the next one, and the root is visited last.
+\end{proof}
+
+In the example programs below, semicolons separate operations. Blank lines and
+new lines are added only for readability.
+
+\begin{example}[Binary composition]
+\label{ex:comp}
+Consider the context
+\[
+  \Delta_{\mathrm{c}}
+  =
+  \bigl(
+    x:\obj,\,
+    y:\obj,\,
+    f:\arr[\obj]{x}{y},\,
+    z:\obj,\,
+    g:\arr[\obj]{y}{z}
+  \bigr).
+\]
+The binary composite in this context is the term
+\[
+  \operatorname{comp}(f,g)
+  =
+  \coh_{\Delta_{\mathrm{c}},\,\arr[\obj]{x}{z}}
+      [\mathrm{id}_{\Delta_{\mathrm{c}}}].
+\]
+Its syntax tree is constructed by the following program. The four blocks
+construct the context \(\Delta_{\mathrm{c}}\), the type \(\arr[\obj]{x}{z}\),
+the identity substitution, and the final coherence node, respectively.
+
+\begin{githubcode}
+NODE(EmptyCtx);
+NODE(Star); NODE(ExtendCtx, x);
+NODE(Star); NODE(ExtendCtx, y);
+NODE(Star); NODE(Var, x); NODE(Var, y); NODE(Arrow);
+NODE(ExtendCtx, f);
+NODE(Star); NODE(ExtendCtx, z);
+NODE(Star); NODE(Var, y); NODE(Var, z); NODE(Arrow);
+NODE(ExtendCtx, g);
+
+NODE(Star); NODE(Var, x); NODE(Var, z); NODE(Arrow);
+
+NODE(EmptySub);
+NODE(Var, x); NODE(ExtendSub, x);
+NODE(Var, y); NODE(ExtendSub, y);
+NODE(Var, f); NODE(ExtendSub, f);
+NODE(Var, z); NODE(ExtendSub, z);
+NODE(Var, g); NODE(ExtendSub, g);
+
+NODE(Coh)
+\end{githubcode}
+
+Figure~\ref{fig:comp-syntax-tree} shows the resulting abstract syntax tree. Its
+root is the \texttt{Coh} constructor. The three subtrees rooted at vertices
+\(17\), \(21\), and \(32\) represent the context \(\Delta_{\mathrm{c}}\), the
+type \(\arr[\obj]{x}{z}\), and the identity substitution, respectively. Children
+are ordered from left to right. The gray bracketed numbers indicate the
+positions of the corresponding operations in the postorder program. Variable
+names are parameters of vertices.
+
+\begin{figure}[H]
+  \centering
+  \begin{forest}
+  for tree={
+    grow=270,
+    parent anchor=south,
+    child anchor=north,
+    anchor=north,
+    align=center,
+    font=\footnotesize,
+    draw=black!45,
+    rounded corners=2pt,
+    fill=black!3,
+    inner sep=1.5pt,
+    l sep=8pt,
+    s sep=2pt,
+    edge={draw=black!55, line width=.35pt}
+  }
+    [{\compastlabel{33}{Coh}{}}
+      [{\compastlabel{17}{ExtendCtx}{(g)}}
+        [{\compastlabel{12}{ExtendCtx}{(z)}}
+          [{\compastlabel{10}{ExtendCtx}{(f)}}
+            [{\compastlabel{5}{ExtendCtx}{(y)}}
+              [{\compastlabel{3}{ExtendCtx}{(x)}}
+                [{\compastlabel{1}{EmptyCtx}{}}]
+                [{\compastlabel{2}{Star}{}}]
+              ]
+              [{\compastlabel{4}{Star}{}}]
+            ]
+            [{\compastlabel{9}{Arrow}{}}
+              [{\compastlabel{6}{Star}{}}]
+              [{\compastlabel{7}{Var}{(x)}}]
+              [{\compastlabel{8}{Var}{(y)}}]
+            ]
+          ]
+          [{\compastlabel{11}{Star}{}}]
+        ]
+        [{\compastlabel{16}{Arrow}{}}
+          [{\compastlabel{13}{Star}{}}]
+          [{\compastlabel{14}{Var}{(y)}}]
+          [{\compastlabel{15}{Var}{(z)}}]
+        ]
+      ]
+      [{\compastlabel{21}{Arrow}{}}
+        [{\compastlabel{18}{Star}{}}]
+        [{\compastlabel{19}{Var}{(x)}}]
+        [{\compastlabel{20}{Var}{(z)}}]
+      ]
+      [{\compastlabel{32}{ExtendSub}{(g)}}
+        [{\compastlabel{30}{ExtendSub}{(z)}}
+          [{\compastlabel{28}{ExtendSub}{(f)}}
+            [{\compastlabel{26}{ExtendSub}{(y)}}
+              [{\compastlabel{24}{ExtendSub}{(x)}}
+                [{\compastlabel{22}{EmptySub}{}}]
+                [{\compastlabel{23}{Var}{(x)}}]
+              ]
+              [{\compastlabel{25}{Var}{(y)}}]
+            ]
+            [{\compastlabel{27}{Var}{(f)}}]
+          ]
+          [{\compastlabel{29}{Var}{(z)}}]
+        ]
+        [{\compastlabel{31}{Var}{(g)}}]
+      ]
+    ]
+  \end{forest}
+  \caption{The abstract syntax tree constructed by the program in
+    Example~\ref{ex:comp}. Each of its \(33\) vertices corresponds to one
+    \texttt{NODE} operation.}
+  \label{fig:comp-syntax-tree}
+\end{figure}
+
+This program contains \(33\) elementary operations. Its output corresponds to
+the right-hand side of the following definition in Benjamin's
+syntax~\cite{Benjamin_Catt_Github}:
+
+\begin{githubcode}
+let comp_example (x(f)y(g)z) : x -> z = comp f g
+\end{githubcode}
+\end{example}
+
+\begin{example}[Right whiskering]
+\label{ex:whiskr}
+Consider right whiskering in the context
+\[
+  \begin{aligned}
+    \Delta_{\mathrm{w}} = \bigl(
+      &x:\obj,\,
+       y:\obj,\,
+       f:\arr[\obj]{x}{y},\,
+       g:\arr[\obj]{x}{y},\\
+      &a:\arr[{\arr[\obj]{x}{y}}]{f}{g},\,
+       z:\obj,\,
+       h:\arr[\obj]{y}{z}
+    \bigr).
+  \end{aligned}
+\]
+Writing
+\[
+  A_{\mathrm{w}}
+  =
+  \arr[{\arr[\obj]{x}{z}}]
+      {\operatorname{comp}(f,h)}
+      {\operatorname{comp}(g,h)},
+\]
+the right-whiskering term is
+\[
+  \operatorname{whiskr}(a,h)
+  =
+  \coh_{\Delta_{\mathrm{w}},A_{\mathrm{w}}}
+      [\mathrm{id}_{\Delta_{\mathrm{w}}}].
+\]
+The following program constructs its syntax tree.
+
+\begin{githubcode}
+NODE(EmptyCtx);
+NODE(Star); NODE(ExtendCtx, x);
+NODE(Star); NODE(ExtendCtx, y);
+NODE(Star); NODE(Var, x); NODE(Var, y); NODE(Arrow);
+NODE(ExtendCtx, f);
+NODE(Star); NODE(Var, x); NODE(Var, y); NODE(Arrow);
+NODE(ExtendCtx, g);
+NODE(Star); NODE(Var, x); NODE(Var, y); NODE(Arrow);
+NODE(Var, f); NODE(Var, g); NODE(Arrow);
+NODE(ExtendCtx, a);
+NODE(Star); NODE(ExtendCtx, z);
+NODE(Star); NODE(Var, y); NODE(Var, z); NODE(Arrow);
+NODE(ExtendCtx, h);
+
+NODE(Star); NODE(Var, x); NODE(Var, z); NODE(Arrow);
+
+NODE(EmptyCtx);
+NODE(Star); NODE(ExtendCtx, x);
+NODE(Star); NODE(ExtendCtx, y);
+NODE(Star); NODE(Var, x); NODE(Var, y); NODE(Arrow);
+NODE(ExtendCtx, f);
+NODE(Star); NODE(ExtendCtx, z);
+NODE(Star); NODE(Var, y); NODE(Var, z); NODE(Arrow);
+NODE(ExtendCtx, g);
+NODE(Star); NODE(Var, x); NODE(Var, z); NODE(Arrow);
+NODE(EmptySub);
+NODE(Var, x); NODE(ExtendSub, x);
+NODE(Var, y); NODE(ExtendSub, y);
+NODE(Var, f); NODE(ExtendSub, f);
+NODE(Var, z); NODE(ExtendSub, z);
+NODE(Var, h); NODE(ExtendSub, g);
+NODE(Coh);
+
+NODE(EmptyCtx);
+NODE(Star); NODE(ExtendCtx, x);
+NODE(Star); NODE(ExtendCtx, y);
+NODE(Star); NODE(Var, x); NODE(Var, y); NODE(Arrow);
+NODE(ExtendCtx, f);
+NODE(Star); NODE(ExtendCtx, z);
+NODE(Star); NODE(Var, y); NODE(Var, z); NODE(Arrow);
+NODE(ExtendCtx, g);
+NODE(Star); NODE(Var, x); NODE(Var, z); NODE(Arrow);
+NODE(EmptySub);
+NODE(Var, x); NODE(ExtendSub, x);
+NODE(Var, y); NODE(ExtendSub, y);
+NODE(Var, g); NODE(ExtendSub, f);
+NODE(Var, z); NODE(ExtendSub, z);
+NODE(Var, h); NODE(ExtendSub, g);
+NODE(Coh);
+
+NODE(Arrow);
+
+NODE(EmptySub);
+NODE(Var, x); NODE(ExtendSub, x);
+NODE(Var, y); NODE(ExtendSub, y);
+NODE(Var, f); NODE(ExtendSub, f);
+NODE(Var, g); NODE(ExtendSub, g);
+NODE(Var, a); NODE(ExtendSub, a);
+NODE(Var, z); NODE(ExtendSub, z);
+NODE(Var, h); NODE(ExtendSub, h);
+
+NODE(Coh)
+\end{githubcode}
+
+This program contains \(117\) elementary operations. In Benjamin's syntax, the
+coherence can be declared as follows:
+
+\begin{githubcode}
+coh whiskr (x(f(a)g)y(h)z) : comp f h -> comp g h
+\end{githubcode}
+
+The term constructed by the program is the right-hand side of the following
+definition:
+
+\begin{githubcode}
+let whiskr_example (x(f(a)g)y(h)z)
+    : comp f h -> comp g h
+    = whiskr a h
+\end{githubcode}
+\end{example}
+
+\section{Explicit Program Encodings}
+Now, we approach complexity of \(P\) as a total number of symbols in its
+explicit encoded presentation.
+
+\begin{definition}[Total length]
+\label{def:program-total-length}
+Let \(P=(o_1,\ldots,o_n)\in\mathcal P_E(T)\), where each \(o_i\) is a complete
+encoded operation over an alphabet. The \emph{total length} of \(P\) is
+\[
+  \|P\| := \sum_{i=1}^{n}|o_i|,
+\]
+where \(|o_i|\) denotes the number of symbols in \(o_i\). Equivalently,
+\(\|P\|\) is the length of the string \(o_1\cdots o_n\) obtained by
+concatenating operations.
+
+For a fixed encoding \(E\) and tree \(T\), every program in \(\mathcal P_E(T)\)
+contains the same encoded instructions, although their order may differ.
+Consequently, all these programs have the same total length. We denote this
+common value by
+\[
+  \|\mathcal P_E(T)\| := \|P\|,
+  \qquad P\in\mathcal P_E(T).
+\]
+\end{definition}
+
+\begin{proposition}
+Let \(E\) use a fixed alphabet \(\Sigma_E\) containing
+\(q\geq 2\) symbols.
+There exists a binary encoding \(E_{\mathrm{bin}}\)
+such that, for every \(T\in\mathcal T\) and every
+\(P\in\mathcal P_E(T)\), the corresponding program
+\(P_{\mathrm{bin}}\in\mathcal P_{E_{\mathrm{bin}}}(T)\)
+satisfies
+\[
+  |P_{\mathrm{bin}}|=|P|,
+  \qquad
+  \|P_{\mathrm{bin}}\|
+  =\lceil\log_2 q\rceil\,\|P\|.
+\]
+\end{proposition}
+
+\begin{proof}
+Apply the fixed-length alphabet encoding described in
+\cite[Section~2.5]{greenlaw_hoover_1998}. Put \(b=\lceil\log_2 q\rceil\). Since
+\(q\leq 2^b\), each symbol of \(\Sigma_E\) can be assigned a distinct binary
+word of length \(b\). Define \(E_{\mathrm{bin}}\) by replacing every symbol in
+each complete operation record with its assigned binary word.
+
+The original symbols can be recovered by reading blocks of \(b\) bits. Applying
+the decoder for \(E\) then recovers the original operation sequence. Therefore,
+this replacement preserves the sequence of elementary operations, so
+\(P_{\mathrm{bin}}\) describes the same tree \(T\) and satisfies
+\(|P_{\mathrm{bin}}|=|P|\). Every encoded symbol is replaced by exactly \(b\)
+bits, giving \(\|P_{\mathrm{bin}}\|=b\,\|P\|\).
+\end{proof}
+
+\begin{definition}[Worst-case optimal encoding]
+\label{def:worst-case-optimal-encoding}
+Let \(\mathcal F\subseteq\mathcal T\) be a nonempty finite family of finite
+\catt abstract syntax trees, and let \(\mathfrak P\) be a nonempty family of
+functions \(\mathcal P_E\).
+
+An encoding \(E_*\), with
+\(\mathcal P_{E_*}\in\mathfrak P\), is
+\emph{worst-case optimal for \(\mathcal F\)} if
+\[
+  \max_{T\in\mathcal F}
+    \|\mathcal P_{E_*}(T)\|
+  =
+  \min_{\mathcal P_E\in\mathfrak P}
+    \max_{T\in\mathcal F}
+      \|\mathcal P_E(T)\|.
+\]
+Thus, a worst-case optimal encoding minimizes the largest total program length
+among the trees in \(\mathcal F\).
+\end{definition}
+
+\begin{definition}[Explicit program]
+An encoded program \(P=(o_1,\ldots,o_n)\) is \emph{explicit} if each operation
+\(o_i\) has all its fields separately encoded by codewords with a common fixed
+nonempty suffix terminator, which cannot occur elsewhere within a codeword.
+Equivalently, the field codewords form a pattern
+code~\cite{anisimov_zavadskyi_2017}.
+\end{definition}
+
+\begin{remark}
+No additional operation terminators or field separators are needed, since the
+end of each field codeword is unambiguous. The operation tag field determines
+whether a parameter field follows. Consequently, the concatenation \(o_1\cdots
+o_n\) can be parsed as string unambiguously.
+\end{remark}
+
+\section{Worst-Case Optimal Explicit Encodings}
+Now, we characterize a general construction for worst-case optimal explicit
+encoding for a given nonempty finite family \(\mathcal F\subseteq\mathcal T\) of
+finite \catt abstract syntax trees, over a fixed finite alphabet \(\Sigma\) with
+at least two symbols.
+
+Let \(\mathsf{Tag}\) be subset of eight tag fields, and let \(\mathsf{Param}\)
+be a set of the parameter fields. We use code, that is, an injective function:
+\[
+  c\colon \mathsf{Tag}\sqcup\mathsf{Param}\longrightarrow\Sigma^+.
+\]
+whose codewords ending is a common suffix \(\delta\in\Sigma^+\) that occurs
+nowhere else within any codeword. The disjoint union keeps tags distinct from
+parameter indices. Each operation is encoded as
+\[
+  \begin{aligned}
+    E(a)   &= c(a)     && \text{if \(a\) takes no parameter},\\
+    E(a,p) &= c(a)c(p) && \text{if \(a\) takes a parameter \(p\in\mathsf{Param}\)}.
+  \end{aligned}
+\]
+\(c(a)c(p)\) denotes the concatenation of tag and parameter codewords.
+
+\begin{proposition}[Construction of an optimal explicit encoding]
+\label{prop:constructive-minimax-encoding}
+For all nonempty finite family of finite \catt abstract syntax trees \(\mathcal
+F\subseteq\mathcal T\), there is a finite search which finds an optimal encoding
+over alphabet \(\Sigma\) with at least 2 symbols.
+\end{proposition}
+\begin{proof}
+Let \(D=\mathsf{Tag}\sqcup\mathsf{Param}\) be the set of fields occurring in
+\(\mathcal F\), and put \(d=|D|\). For each \(\delta\in\Sigma^+\), let
+\[
+  C_\delta := \{w\in\Sigma^+ :
+    \text{\(\delta\) occurs exactly once in \(w\), as its suffix}\}.
+\]
+Perform the following search.
+\begin{enumerate}
+\item Enumerate the terminators \(\delta\in\Sigma^+\) of length at most \(d\).
+\item For each \(\delta\), take the shortest \(d\) words of \(C_\delta\) in the
+      fixed enumeration by nondecreasing length.
+\item Try every bijection from \(D\) to these words and return a terminator and
+      assignment minimizing \(\max_{T\in\mathcal F}\|\mathcal P_E(T)\|\).
+\end{enumerate}
+
+The search is finite. There are finitely many terminators in Step~1. For Step~2,
+choose \(b\in\Sigma\) different from the first symbol of \(\delta\). The words
+\(b^j\delta\), for \(0\leq j<d\), belong to \(C_\delta\), so it suffices to
+inspect words of length at most \(|\delta|+d-1\). Step~3 tests \(d!\)
+assignments per terminator on finitely many finite trees.
+\end{proof}
+
+\begin{remark}[Size of the search]
+There are
+\[
+  \sum_{m=1}^{d}q^m=\frac{q^{d+1}-q}{q-1}
+\]
+suffixes in step~1 and at most
+\[
+  \frac{q^{d+1}-q}{q-1}\,d!
+\]
+assignments to evaluate, where \(q\) is number of symbols in prescribed
+alphabet. For the binary alphabet this becomes \((2^{d+1}-2)d!\). Generating the
+short codewords for each terminator require additional work.
+\end{remark}
+
+
+\begin{remark}[Predefined suffix]
+If a particular suffix \(\delta\) is prescribed in advance, simply omit step~1.
+The bound on used codeword lengths is then \(|\delta|+d-1\).
+\end{remark}
+
+\begin{proposition}[Enlarging the family]
+\label{prop:minimax-family-monotonicity}
+For nonempty finite families \(\mathcal F\subseteq\mathcal
+G\subseteq\mathcal{T}\), the optimal worst-case total length for \(\mathcal F\)
+is at most that for \(\mathcal G\).
+\end{proposition}
+\begin{proof}
+For every fixed encoding, the maximum over \(\mathcal F\) is at most the maximum
+over \(\mathcal G\).
+\end{proof}
+
+\begin{proposition}[No single optimum for every finite family]
+\label{prop:no-uniform-pattern-optimum}
+No encoding \(E\) is worst-case optimal for every finite family of \catt
+abstract syntax trees.
+\end{proposition}
+\begin{proof}
+The one-vertex trees \(\texttt{EmptyCtx}\) and \(\texttt{Star}\) each contain
+one tag field and no parameter. For either singleton family, the optimum is one
+symbol assigned to the field. An encoding optimal for both singleton families
+would give distinct one-symbol codewords to the two tags. However, two distinct
+one-symbol words cannot have a common nonempty suffix. This contradicts the
+pattern-code requirement.
+\end{proof}
+
+\begin{proposition}
+Let \(\mathcal F_1\) and \(\mathcal F_2\) be nonempty finite families of \catt
+abstract syntax trees such that the same unique fields occur in both families.
+Within class of encodings with a fixed terminator suffix, these families admit
+worst-case optimal encodings assigning the same set of codewords to their
+occurring fields, differing only in the assignment of these codewords.
+\end{proposition}
+\begin{proof}
+Let \(N\) be the common number of unique fields. Choose \(N\) shortest codewords
+permitted by the fixed terminator and list them in nondecreasing order of
+length.
+
+For either family, consider any admissible encoding and order its \(N\) used
+codewords by nondecreasing length. Replace the \(j\)-th codeword by the \(j\)-th
+chosen codeword. No field becomes longer, so no program in the family becomes
+longer. Thus its worst-case total length cannot increase.
+
+It therefore suffices to consider assignments of the chosen codewords to the
+occurring fields. There are only finitely many such assignments, so one attains
+the minimum. Applying this argument to both families proves the claim.
+\end{proof}
+
+\begin{lemma}[Frequency ordering]
+\label{lem:frequency-ordering}
+Every nonempty finite family \(\mathcal F\subseteq\mathcal T\) admits a
+worst-case optimal encoding with the following property: if \(x\) occurs more
+often than \(y\) in some tree and less often in none, then \(x\)'s codeword is
+no longer than \(y\)'s.
+\end{lemma}
+\begin{proof}
+From the worst-case optimal encodings, choose one that minimizes the sum of the
+encoded lengths of the trees in \(\mathcal F\). If \(x\) had the longer
+codeword, interchanging the two would shorten at least one tree without
+lengthening any other, contradicting this choice.
+\end{proof}
+
+\begin{proposition}
+Let \(\mathcal F\) be a nonempty finite family of \catt abstract syntax
+trees of coherences, and let \(c\) be the code of a worst-case optimal encoding, then
+\[
+  |c(\mathtt{Var})| \leq |c(\mathtt{Star})| \leq |c(\mathtt{ExtendCtx})|
+\]
+and
+\[
+  |c(\mathtt{Var})| \leq |c(\mathtt{Arrow})|
+\]
+Moreover, for \(\mathcal F\) there exists a worst-case optimal encoding whose
+code \(\tilde{c}\) has the following properties:
+\[
+  |\tilde{c}(\mathtt{ExtendCtx})|  \leq |\tilde{c}(\mathtt{ExtendSub})| \leq 
+  |\tilde{c}(\mathtt{Coh})| \leq |\tilde{c}(\mathtt{EmptyCtx})| \leq 
+  |\tilde{c}(\mathtt{EmptySub})|
+\]
+and
+\[
+  |\tilde{c}(\mathtt{Arrow})| \leq |\tilde{c}(\mathtt{Coh})|
+\]
+\end{proposition}
+\begin{proof}
+Follows from Lemmas~\ref{lem:catt-term-tag-counts}
+and~\ref{lem:frequency-ordering}.  % I may expand this proof in the future.
+\end{proof}
+
+% This part and Appendix were created by AI.
+\subsection{Optimal Binary Encodings for Composition and Right Whiskering}
+We now compute the shortest binary encodings of the programs for $\mathtt{comp}$
+and $\mathtt{whiskr}$ in Examples~\ref{ex:comp} and~\ref{ex:whiskr}. We keep the
+variable names used in those examples. As above, we use one injective code for
+both constructor tags and parameters, and we do not count the length of a
+description of the code itself.
+
+The following table gives one code that is optimal for both programs. Its
+terminator is $\delta=01$. The last two columns count how often each field
+occurs in the respective program.
+
+\begin{center}
+\begin{tabular}{lcrr}
+\hline
+Field & Codeword & $\mathtt{comp}$ & $\mathtt{whiskr}$ \\
+\hline
+$\mathtt{Var}$       & \texttt{01}     & 11 & 41 \\
+$\mathtt{Star}$      & \texttt{001}    &  6 & 20 \\
+$\mathtt{ExtendCtx}$ & \texttt{101}    &  5 & 17 \\
+$\mathtt{ExtendSub}$ & \texttt{0001}   &  5 & 17 \\
+$x$                  & \texttt{1001}   &  5 & 17 \\
+$y$                  & \texttt{1101}   &  5 & 17 \\
+$z$                  & \texttt{00001}  &  5 & 15 \\
+$\mathtt{Arrow}$     & \texttt{10001}  &  3 & 13 \\
+$f$                  & \texttt{11001}  &  3 &  9 \\
+$g$                  & \texttt{11101}  &  3 &  9 \\
+$\mathtt{EmptyCtx}$  & \texttt{000001} &  1 &  3 \\
+$\mathtt{EmptySub}$  & \texttt{100001} &  1 &  3 \\
+$\mathtt{Coh}$       & \texttt{110001} &  1 &  3 \\
+$h$                  & \texttt{111001} &  0 &  5 \\
+$a$                  & \texttt{111101} &  0 &  3 \\
+\hline
+Total field occurrences & & 54 & 192 \\
+\hline
+\end{tabular}
+\end{center}
+
+\paragraph{Example (composition).}
+The program for $\mathtt{comp}$ has 33 instructions. Under the displayed code,
+the numbers of field occurrences encoded in $2,3,4,5,6$ bits are
+$11,11,15,14,3$, respectively. Hence its encoded length is
+\[
+  2\cdot11+3\cdot11+4\cdot15+5\cdot14+6\cdot3
+  =203\text{ bits}.
+\]
+
+\paragraph{Example (right whiskering).}
+The program for $\mathtt{whiskr}$ has 117 instructions. Under the same code, the
+corresponding counts are $41,37,51,46,17$. Hence its encoded length is
+\[
+  2\cdot41+3\cdot37+4\cdot51+5\cdot46+6\cdot17
+  =729\text{ bits}.
+\]
+
+\paragraph{Optimality.}
+For a fixed terminator, a shortest encoding of a single program assigns the
+shortest available words to the most frequent fields: if a more frequent field
+has a longer word, exchanging the two words can only shorten the program. Ties
+may be settled arbitrarily.
+
+For $\delta=01$, the words of length $\ell\ge2$ in $C_\delta$ are
+precisely
+\[
+  1^i0^{\ell-i-1}1,\qquad 0\le i\le\ell-2.
+\]
+Thus there is one word of length $2$, two of length $3$, three of length $4$,
+and so on. In each example the displayed code gives the shortest available
+lengths to the most frequent fields. It is therefore optimal for this
+terminator.
+
+It remains to compare terminators. Complementing every bit preserves codeword
+lengths, so it suffices to check $0$, $00$, and $01$ among terminators of length
+at most two. For $0$, there is one word of each positive length. For $00$, the
+fifteen shortest words have lengths
+\[
+  2,3,4,4,5,5,5,6,6,6,6,6,7,7,7.
+\]
+Pairing these lengths with the field counts in decreasing order gives
+\[
+\begin{array}{c|rr}
+  \text{Terminator} & \mathtt{comp} & \mathtt{whiskr}\\
+  \hline
+  0  \text{ or } 1  & 265 & 984\\
+  00 \text{ or } 11 & 228 & 820\\
+  01 \text{ or } 10 & 203 & 729
+\end{array}
+\]
+
+Finally, if the terminator has length at least three, there is at most one
+admissible word of length three and at most three words of length at most four.
+Thus even the three most frequent fields require at least $3,4,4$ bits,
+respectively, and every remaining field requires at least $5$ bits in an optimal
+frequency ordering. This gives the lower bounds
+\[
+\begin{aligned}
+  \mathtt{comp}:   &\quad 5\cdot54-2\cdot11-6-5=237,\\
+  \mathtt{whiskr}: &\quad 5\cdot192-2\cdot41-20-17=841.
+\end{aligned}
+\]
+Both exceed the lengths attained with $01$. The singleton minima are therefore
+$203$ and $729$ bits, respectively. Moreover, the optimal worst-case length for
+the family $\{\mathtt{comp},\mathtt{whiskr}\}$ is also $729$ bits:
+$\mathtt{whiskr}$ alone requires that many bits, and the displayed code attains
+the bound for the pair.
+
+\section{Future Work}
+\paragraph{Structural Properties and Optimal Encodings}
+One may look for structural properties similar to~\ref{lem:catt-term-tag-counts}
+and efficient ways of finding worst-case optimal encodings.
+
+\paragraph{Time-Bounded Kolmogorov Complexity}
+One can introduce a two-turing machine model for describing time-bounded
+Kolmgorov complexity of \catt entities. This model can combine two Turing
+machines. The first, $M_1$, takes as input a straight-line program that
+constructs a CaTT syntax tree by adding one vertex at a time. Second one, $M_2$,
+takes a program containing metaoperations and outputs the expanded straight-line
+program used by previous machine. This separation to two turing machines is
+particularly useful if we want to limit computation of $M_2$ to expanding
+metaoperations to straight-line program of elementary \catt operations, and
+$M_1$ to merely outputing encoded abstract syntax tree corresponding to
+straight-line program of elementary \catt operations.
+
+\paragraph{Asymptotic Growth}
+Given the toolkit for measuring size of \catt entities one may seek asymptotic
+bounds of ceratain families of objects.
+
+\bibliography{biblio}
+
+
+
+
+% \section{Asymptotic growth of explicit \catt terms with dimension}
+% \section{Growth of explicit \catt terms with dimension}
+\appendix
+\section{Growth of explicit \catt terms with dimension}
+\label{sec:catt-depth-one-minimum}
+
+Disclaimer: This part as well as examples were generated by AI, but I decided to
+keep them, at least for now.
+
+
+
+Fix \(\Gamma=(x:\obj)\). We ask for the minimum number \(|P|\) of
+elementary operations needed to construct an \(n\)-cell in \(\Gamma\).
+Here \(n\) is the dimension of its type, with \(\dim(\obj)=0\) and
+\(\dim(\arr[A]{s}{t})=\dim(A)+1\). We restrict to terms of coherence
+depth at most one~\cite[Section~IV.C]{finster_typetheoretical_2017}:
+at each occurrence of \(\coh_{\Delta,A}[\sigma]\), the formal type
+\(A\) contains no coherence. Its substitution entries may themselves
+be coherences. As before, repeated subtrees are counted separately.
+
+\begin{theorem}[Minimum length at coherence depth one]
+\label{thm:catt-depth-one-minimum}
+Among such \(n\)-cells, let \(h_n\) be the minimum number of
+\(\mathtt{Coh}\) instructions and \(F_n\) the minimum program
+length \(|P|\). The \(n\)-fold identity on \(x\) minimizes the
+number of occurrences of every tag and hence attains both minima.
+For \(n\ge0\),
+\[
+\begin{aligned}
+ h_0&=0, & h_1&=1,  & h_{n+2}&=2h_{n+1}+h_n,\\
+ F_0&=1, & F_1&=11, & F_{n+2}&=2F_{n+1}+F_n+6n+12.
+\end{aligned}
+\]
+In particular, \(h_n\) is the \(n\)th Pell
+number~\cite[Chapter~7]{koshy_pell_2014}.
+\end{theorem}
+
+\begin{proof}
+Put \(t_0=x\) and \(t_{k+1}=\mathrm{id}_{t_k}\), using the disc
+identity of~\cite[Definitions~2.3--2.4]{Beyond_eh}. Its formal
+type contains no coherence. Written in full, its substitution
+contains \(t_k\) once and \(t_j\) twice for each \(j<k\), once
+for each of the two \(j\)-dimensional faces. Thus all \(t_k\)
+have coherence depth at most one.
+
+We prove by strong induction that \(t_k\) minimizes every tag
+count. The only \(0\)-cell in \(\Gamma\) is \(x\). Any competing
+\((k+1)\)-cell is of the form \(\coh_{\Delta,A}[\sigma]\).
+Since \(A\) is coherence-free, its source is a \(k\)-dimensional
+variable. This variable and its faces determine a map from the
+\(k\)-disc into the pasting scheme of \(\Delta\), injective
+by~\cite[Lemma~29]{finster_typetheoretical_2017}. Each disc
+variable therefore selects a distinct entry of \(\sigma\).
+By induction, each selected entry contains at least as many
+occurrences of every tag as the corresponding \(t_j\), and the
+explicit tree counts these entries separately. The selected
+declaration types and the formal type have the same tag counts
+as their counterparts in \(t_{k+1}\): a coherence-free \(j\)-type
+has one \(\mathtt{Star}\), \(j\) arrows and \(2j\) variable
+endpoints. Both lists have one extension per declaration and one
+empty node. Adding the coherence root proves the claim.
+
+It remains to count the \(t_k\). The initial pairs \((h_k,F_k)\)
+are \((0,1)\) and \((1,11)\): for \(t_1\), the root, context,
+formal type and substitution contribute \(1+3+4+3\) vertices.
+Compared with \(D_n\), the disc \(D_{n+1}\) has one additional
+declaration in each of dimensions \(n\) and \(n+1\). Hence the
+substitution for \(t_{n+2}\) gains one copy each of \(t_n\) and
+\(t_{n+1}\) over that for \(t_{n+1}\). This gives the recurrence
+for \(h_n\). The two declaration types add \(3n+1\) and \(3n+4\)
+vertices, the two lists add four extensions, and the formal type
+adds one arrow and two endpoints. Their sum is \(6n+12\), giving
+the recurrence for \(F_n\).
+\end{proof}
+
+\begin{corollary}[Growth and cost of the tag fields]
+The minimum program length is
+\[
+ F_n=7h_{n+1}+6h_n-3n-6.
+\]
+Both \(h_n\) and \(F_n\) grow as \(\Theta((1+\sqrt{2})^n)\).
+For any fixed code \(c\), the \(n\)-fold identity also minimizes
+the total length of the tag fields.
+\end{corollary}
+
+\begin{proof}
+Both \(F_n+3n+6\) and \(7h_{n+1}+6h_n\) satisfy the Pell recurrence
+with initial values \(7,20\), so they agree. The growth rate follows
+from the Pell formula
+\(h_n=((1+\sqrt{2})^n-(1-\sqrt{2})^n)/(2\sqrt{2})\).
+For the last claim, multiply each tag count by its codeword length
+and sum over the eight tags. This counts only the tag fields;
+\(\|P\|\) also includes the parameter fields.
+\end{proof}
+
+For example, the first six minimum program lengths are
+\(1,11,35,99,257,643\). In dimension two the minimum is \(35\)
+operations, of which two are \(\mathtt{Coh}\) instructions.
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: "main"
+%%% End:

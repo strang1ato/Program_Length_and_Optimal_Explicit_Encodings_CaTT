@@ -1,0 +1,44 @@
+% Bibliography block for insertion before \end{document}. Uses hyperref.
+\begin{thebibliography}{99}
+
+\bibitem{anisimov_zavadskyi_2017}
+Anatoly~V. Anisimov and Igor~O. Zavadskyi.
+\newblock \href{https://doi.org/10.1109/TIT.2017.2674670}{Variable-length prefix codes with multiple delimiters}.
+\newblock \emph{IEEE Transactions on Information Theory}, 63(5):2885--2895, 2017.
+
+\bibitem{benjamin_higher_identity}
+Thibaut Benjamin.
+\newblock \href{https://arxiv.org/abs/2412.01667}{Generating higher identity proofs in homotopy type theory}.
+\newblock arXiv:2412.01667, 2024.
+
+\bibitem{Beyond_eh}
+Thibaut Benjamin, Ioannis Markakis, Wilfred Offord, Chiara Sarti, and Jamie Vicary.
+\newblock \href{https://arxiv.org/abs/2501.16465v3}{Beyond Eckmann--Hilton: Commutativity in higher categories}.
+\newblock arXiv:2501.16465v3, 2025.
+
+\bibitem{Benjamin_Catt_Github}
+Thibaut Benjamin.
+\newblock \href{https://github.com/thibautbenjamin/catt}{\emph{CaTT: An infinity-categorical coherence typechecker}}.
+\newblock Software, version~1.0, 2024.
+
+\bibitem{finster_typetheoretical_2017}
+Eric Finster and Samuel Mimram.
+\newblock \href{https://doi.org/10.1109/LICS.2017.8005124}{A type-theoretical definition of weak $\omega$-categories}.
+\newblock In \emph{32nd Annual ACM/IEEE Symposium on Logic in Computer Science (LICS)}, pp.~1--12. IEEE, 2017.
+
+\bibitem{ASfSAaUC}
+Eric Finster, Alex Rice, and Jamie Vicary.
+\newblock \href{https://doi.org/10.1145/3661814.3662102}{A syntax for strictly associative and unital $\infty$-categories}.
+\newblock In \emph{Proceedings of the 39th Annual ACM/IEEE Symposium on Logic in Computer Science (LICS 2024)}, article~34, pp.~1--13. ACM, 2024.
+
+\bibitem{greenlaw_hoover_1998}
+Raymond Greenlaw and H.~James Hoover.
+\newblock \href{https://shop.elsevier.com/books/fundamentals-of-the-theory-of-computation-principles-and-practice/greenlaw/978-1-55860-547-3}{\emph{Fundamentals of the Theory of Computation: Principles and Practice}}.
+\newblock Morgan Kaufmann, San Francisco, 1998. ISBN 978-1-55860-547-3.
+
+\bibitem{Yanofsky}
+Noson S. Yanofsky.
+\newblock \href{https://doi.org/10.1007/978-3-642-38164-5_25}{Kolmogorov complexity of categories}.
+\newblock In Bob Coecke, Luke Ong, and Prakash Panangaden, editors, \emph{Computation, Logic, Games, and Quantum Foundations: The Many Facets of Samson Abramsky}, Lecture Notes in Computer Science 7860, pp.~350--362. Springer, 2013.
+
+\end{thebibliography}
