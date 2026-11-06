@@ -440,55 +440,42 @@ operations whose tags are \texttt{ExtendCtx}, \texttt{ExtendSub},
 table above.
 
 \section{Abstract Syntax Trees and Construction Programs}
-\begin{definition}
-\(T\) denotes abstract syntax tree derived from syntactic construction build
-according to rules~\ref{fig:syntax} and ~\ref{fig:typing}. \(T\) can represent
-context, substitution, type, or term. \(\mathcal{T} \ni T\) is a family of \catt
-syntax trees.
-\end{definition}
-
-\begin{proposition}[Reconstruction from abstract syntax trees]
-\label{prop:syntax-tree-reconstruction}
-Every \(T\in\mathcal{T}\) determines a unique \catt syntactic entity.
-\end{proposition}
-
-\begin{proof}
-Proof follows from the definition of \(T\in\mathcal{T}\). The root vertex
-determines the resulting sort. Its labelled argument subtrees determine the
-arguments uniquely by structural induction. Hence the entire expression is
-uniquely determined.
-\end{proof}
+We will denote \(\mathcal{T} \ni T\) as family of all \catt abstract syntax
+trees derived from syntactic construction build according to
+rules~\ref{fig:syntax} and ~\ref{fig:typing}. \(\mathcal{T}_\text{fin} \subseteq
+\mathcal{T}\) is family of finite trees. Vertices of \(T\) correspond to
+operations from \ref{tab:elementary-operations}. \(T\) can
+represent any \catt entity -- context, substitution, type, or term.
 
 \begin{remark}
 Different typing judgments can have the same abstract syntax tree for their
 syntactic entity. To see that different typing judgments can have the same tree,
-consider
+consider two typing judgments
 \[
   (x:\obj)\vdash x:\obj,
   \qquad
   (x:\obj,y:\obj)\vdash x:\obj.
 \]
-Both judgments are derivable using Figure~\ref{fig:typing}. Their syntactic
+Both are derivable using Figure~\ref{fig:typing}. Their syntactic
 entities have the same abstract syntax tree, consisting of a single vertex
-labelled \(\mathsf{Var}\) with parameter \(x\). Their contexts, and
-consequently their typing judgments and derivations, are different.
+labelled \(\mathsf{Var}\) with parameter \(x\).
 \end{remark}
 
 
-\begin{definition}
+% \begin{definition}
 Let \(E\) be a finite encoding, over alphabet \(\Sigma_E\), of each of
-elementary \catt operations. Encodings depends only on abstract constructors and
-parameters, independently of arbitrary notation used to represent them.
-\(\mathcal{P}_E\) is a function which assigns each \catt abstract syntax tree a
-family of sequences of \catt elementary operations in a given encoding \(E\),
-which describe intended syntax tree. Each of these sequences is a program whose
-operations are ordered in a manner permitted by rules~\ref{fig:syntax} and
-~\ref{fig:typing}. In particular \(\mathcal{P}_E(T)\) is a family of sequences
-where each sequence describe \(T\). An element \(P \in \mathcal{P}_E(T)\) is an
-admissible program. These programs construct \(T\), starting with no vertices.
-Every admissible program contains exactly one elementary operation for each
-vertex of \(T\).
-\end{definition}
+elementary \catt operations. Encodings are independent of arbitrary notation
+used to represent these operations. \(\mathcal{P}_E\) is a function which
+assigns each \catt abstract syntax tree a family of sequences of \catt
+elementary operations in a given encoding \(E\), which describe intended syntax
+tree. Each of these sequences is a program whose operations are ordered in a
+manner permitted by rules~\ref{fig:syntax} and ~\ref{fig:typing}. In particular
+\(\mathcal{P}_E(T)\) is a family of sequences where each sequence describe
+\(T\in\mathcal{T}\). An element \(P \in \mathcal{P}_E(T)\) is an
+\emph{admissible program}. These programs construct \(T\), starting with no
+vertices. Every admissible program contains exactly one elementary operation for
+each vertex of \(T\).
+% \end{definition}
 
 \begin{definition}[Length]
 \label{def:program-length}
@@ -498,20 +485,18 @@ The \emph{length} of \(P\) is
   |P| := n.
 \]
 
-For a fixed \(T\), every admissible program contains exactly one elementary
-operation for each vertex of \(T\). Consequently, all programs in
+For a fixed \(T\in\mathcal{T}\), every admissible program contains exactly one
+elementary operation for each vertex of \(T\). Consequently, all programs in
 \(\mathcal{P}_E(T)\) have the same length.
-
 \end{definition}
 
-Every \(T\in\mathcal{T}\) admits an elementary construction
-program: recursively construct its argument subtrees,
-then apply the constructor at its root.
+Every \(T\in\mathcal{T}\) admits an elementary construction program: recursively
+construct its argument subtrees, then apply the constructor at its root.
 Consequently, \(\mathcal{P}_E(T)\) is nonempty.
 
-Since every admissible program contains exactly one elementary
-operation for each vertex occurrence of \(T\), all elements
-of \(\mathcal{P}_E(T)\) have the same length:
+Since every admissible program contains exactly one elementary operation for
+each vertex occurrence of \(T\), all elements of \(\mathcal{P}_E(T)\) have the
+same length:
 \[
   |P| = |V(T)|
   \qquad\text{for every } P\in\mathcal{P}_E(T).
@@ -520,8 +505,8 @@ of \(\mathcal{P}_E(T)\) have the same length:
 \section{Structural Properties of Term Trees}
 \begin{lemma}[\catt term tag counts]
 \label{lem:catt-term-tag-counts}
-Let \(T\) be a finite abstract syntax tree of a term, and let \(N_X\) denote the
-number of occurrences of tag \(X\) in \(T\).
+Let \(T\in\mathcal{T}_\text{fin}\) be tree of a term, and let \(N_X\) denote the number
+of occurrences of tag \(X\) in \(T\).
 \begin{enumerate}
   \item \(N_{\mathtt{Coh}} = N_{\mathtt{EmptyCtx}} = N_{\mathtt{EmptySub}},\)
   \item \(N_{\mathtt{ExtendCtx}} = N_{\mathtt{ExtendSub}},\)
@@ -922,13 +907,10 @@ common value by
 \end{definition}
 
 \begin{proposition}
-Let \(E\) use a fixed alphabet \(\Sigma_E\) containing
-\(q\geq 2\) symbols.
-There exists a binary encoding \(E_{\mathrm{bin}}\)
-such that, for every \(T\in\mathcal T\) and every
-\(P\in\mathcal P_E(T)\), the corresponding program
-\(P_{\mathrm{bin}}\in\mathcal P_{E_{\mathrm{bin}}}(T)\)
-satisfies
+Let \(E\) use a fixed alphabet \(\Sigma_E\) containing \(q\geq 2\) symbols.
+There exists a binary encoding \(E_{\mathrm{bin}}\) such that, for every
+\(T\in\mathcal{T}_\text{fin}\) and every \(P\in\mathcal P_E(T)\), the corresponding
+program \(P_{\mathrm{bin}}\in\mathcal P_{E_{\mathrm{bin}}}(T)\) satisfies
 \[
   |P_{\mathrm{bin}}|=|P|,
   \qquad
@@ -954,9 +936,8 @@ bits, giving \(\|P_{\mathrm{bin}}\|=b\,\|P\|\).
 
 \begin{definition}[Worst-case optimal encoding]
 \label{def:worst-case-optimal-encoding}
-Let \(\mathcal F\subseteq\mathcal T\) be a nonempty finite family of finite
-\catt abstract syntax trees, and let \(\mathfrak P\) be a nonempty family of
-functions \(\mathcal P_E\).
+Let \(\mathcal F\subseteq\mathcal{T}_\text{fin}\), and let \(\mathfrak P\) be a
+nonempty family of functions \(\mathcal P_E\).
 
 An encoding \(E_*\), with
 \(\mathcal P_{E_*}\in\mathfrak P\), is
@@ -990,9 +971,9 @@ o_n\) can be parsed as string unambiguously.
 
 \section{Worst-Case Optimal Explicit Encodings}
 Now, we characterize a general construction for worst-case optimal explicit
-encoding for a given nonempty finite family \(\mathcal F\subseteq\mathcal T\) of
-finite \catt abstract syntax trees, over a fixed finite alphabet \(\Sigma\) with
-at least two symbols.
+encoding for a given nonempty finite family \(\mathcal
+F\subseteq\mathcal{T}_\text{fin}\) over a fixed finite alphabet \(\Sigma\) with at
+least two symbols.
 
 Let \(\mathsf{Tag}\) be subset of eight tag fields, and let \(\mathsf{Param}\)
 be a set of the parameter fields. We use code, that is, an injective function:
@@ -1012,9 +993,9 @@ parameter indices. Each operation is encoded as
 
 \begin{proposition}[Construction of an optimal explicit encoding]
 \label{prop:constructive-minimax-encoding}
-For all nonempty finite family of finite \catt abstract syntax trees \(\mathcal
-F\subseteq\mathcal T\), there is a finite search which finds an optimal encoding
-over alphabet \(\Sigma\) with at least 2 symbols.
+For every nonempty finite family \(\mathcal F\subseteq\mathcal{T}_\text{fin}\), there
+is a finite search which finds an optimal encoding over alphabet \(\Sigma\) with
+at least two symbols.
 \end{proposition}
 \begin{proof}
 Let \(D=\mathsf{Tag}\sqcup\mathsf{Param}\) be the set of fields occurring in
@@ -1062,7 +1043,7 @@ The bound on used codeword lengths is then \(|\delta|+d-1\).
 \begin{proposition}[Enlarging the family]
 \label{prop:minimax-family-monotonicity}
 For nonempty finite families \(\mathcal F\subseteq\mathcal
-G\subseteq\mathcal{T}\), the optimal worst-case total length for \(\mathcal F\)
+G\subseteq\mathcal{T}_\text{fin}\), the optimal worst-case total length for \(\mathcal F\)
 is at most that for \(\mathcal G\).
 \end{proposition}
 \begin{proof}
@@ -1085,11 +1066,12 @@ pattern-code requirement.
 \end{proof}
 
 \begin{proposition}
-Let \(\mathcal F_1\) and \(\mathcal F_2\) be nonempty finite families of \catt
-abstract syntax trees such that the same unique fields occur in both families.
-Within class of encodings with a fixed terminator suffix, these families admit
-worst-case optimal encodings assigning the same set of codewords to their
-occurring fields, differing only in the assignment of these codewords.
+Let \(\mathcal F_1\subseteq\mathcal{T}_\text{fin}\) and \(\mathcal
+F_2\subseteq\mathcal{T}_\text{fin}\) be nonempty finite families such that the same
+unique fields occur in both families. Within class of encodings with a fixed
+terminator suffix, these families admit worst-case optimal encodings assigning
+the same set of codewords to their occurring fields, differing only in the
+assignment of these codewords.
 \end{proposition}
 \begin{proof}
 Let \(N\) be the common number of unique fields. Choose \(N\) shortest codewords
@@ -1108,10 +1090,10 @@ the minimum. Applying this argument to both families proves the claim.
 
 \begin{lemma}[Frequency ordering]
 \label{lem:frequency-ordering}
-Every nonempty finite family \(\mathcal F\subseteq\mathcal T\) admits a
-worst-case optimal encoding with the following property: if \(x\) occurs more
-often than \(y\) in some tree and less often in none, then \(x\)'s codeword is
-no longer than \(y\)'s.
+Every nonempty finite family \(\mathcal
+F\subseteq\mathcal{T}_\text{fin}\) admits a worst-case optimal encoding with the following
+property: if \(x\) occurs more often than \(y\) in some tree and less often in
+none, then \(x\)'s codeword is no longer than \(y\)'s.
 \end{lemma}
 \begin{proof}
 From the worst-case optimal encodings, choose one that minimizes the sum of the
@@ -1121,8 +1103,8 @@ lengthening any other, contradicting this choice.
 \end{proof}
 
 \begin{proposition}
-Let \(\mathcal F\) be a nonempty finite family of \catt abstract syntax
-trees of coherences, and let \(c\) be the code of a worst-case optimal encoding, then
+Let \(\mathcal F\subseteq\mathcal{T}_\text{fin}\) be a nonempty finite family of coherences,
+and let \(c\) be the code of a worst-case optimal encoding, then
 \[
   |c(\mathtt{Var})| \leq |c(\mathtt{Star})| \leq |c(\mathtt{ExtendCtx})|
 \]
@@ -1267,7 +1249,7 @@ takes a program containing metaoperations and outputs the expanded straight-line
 program used by previous machine. This separation to two turing machines is
 particularly useful if we want to limit computation of $M_2$ to expanding
 metaoperations to straight-line program of elementary \catt operations, and
-$M_1$ to merely outputing encoded abstract syntax tree corresponding to
+$M_1$ to merely outputing encoded syntax tree corresponding to
 straight-line program of elementary \catt operations.
 
 \paragraph{Asymptotic Growth}
